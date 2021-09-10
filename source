@@ -1,0 +1,206 @@
+-- Gui to Lua
+-- Version: 3.2
+
+-- Instances:
+
+local ArsenalGUI = Instance.new("ScreenGui")
+local Main = Instance.new("Frame")
+local ScrollingFrame = Instance.new("ScrollingFrame")
+local UICorner = Instance.new("UICorner")
+local ESP = Instance.new("TextButton")
+local UICorner_2 = Instance.new("UICorner")
+local VoidGui = Instance.new("TextLabel")
+local UICorner_3 = Instance.new("UICorner")
+local Arsenal = Instance.new("TextLabel")
+local UICorner_4 = Instance.new("UICorner")
+local UICorner_5 = Instance.new("UICorner")
+local Credits = Instance.new("TextLabel")
+local DiscordServer = Instance.new("TextLabel")
+
+--Properties:
+
+ArsenalGUI.Name = "ArsenalGUI"
+ArsenalGUI.Parent = game.CoreGui
+ArsenalGUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Main.Name = "Main"
+Main.Parent = ArsenalGUI
+Main.BackgroundColor3 = Color3.fromRGB(49, 49, 49)
+Main.Position = UDim2.new(0.270511776, 0, 0.294032007, 0)
+Main.Size = UDim2.new(0, 565, 0, 255)
+Main.Active = true
+Main.Draggable = true
+
+ScrollingFrame.Parent = Main
+ScrollingFrame.Active = true
+ScrollingFrame.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+ScrollingFrame.Position = UDim2.new(0, 0, 0.196078435, 0)
+ScrollingFrame.Size = UDim2.new(0, 243, 0, 205)
+
+UICorner.Parent = ScrollingFrame
+
+ESP.Name = "ESP"
+ESP.Parent = ScrollingFrame
+ESP.BackgroundColor3 = Color3.fromRGB(0, 50, 152)
+ESP.BorderSizePixel = 0
+ESP.Position = UDim2.new(0.0740740746, 0, 0.0254901964, 0)
+ESP.Size = UDim2.new(0, 200, 0, 50)
+ESP.Font = Enum.Font.SourceSans
+ESP.Text = "ESP"
+ESP.TextColor3 = Color3.fromRGB(0, 0, 0)
+ESP.TextScaled = true
+ESP.TextSize = 14.000
+ESP.TextWrapped = true
+ESP.MouseButton1Click:connect(function()
+	ALLYCOLOR = {0,255,100}  	--//Color of the ESP  of people on the same team
+	ENEMYCOLOR =  {255,0,0} 	--//Color of the ESP  of people on NOT the same team
+	TRANSPARENCY = 0.7			--//Transparency of the ESP
+	HEALTHBAR_ACTIVATED = false 	--//Renders the Healthbar
+	--
+	--
+
+	--							!!!Don't Change Anything Below Here Unless You Know What You're Doing!!!
+
+	function createFlex()
+		-- -----------------------------------------------------------------------------------
+		--[VARIABLES] //Changing may result in Errors!
+		players = game:GetService("Players") --//Required for PF
+		faces = {"Front","Back","Bottom","Left","Right","Top"} --//Every possible Enum face
+		currentPlayer = nil --//Used for the Team-Check
+		lplayer = players.LocalPlayer --//The LocalPlayer
+		-- -----------------------------------------------------------------------------------
+		players.PlayerAdded:Connect(function(p)
+			currentPlayer = p
+			p.CharacterAdded:Connect(function(character) --//For when a new Player joins the game 
+				createESP(character)			
+			end)		
+		end)
+		-- -----------------------------------------------------------------------------------
+		function checkPart(obj)  if (obj:IsA("Part") or obj:IsA("MeshPart")) and obj.Name~="HumanoidRootPart" then return true end end --//Check if the Part is suitable 
+		-- -----------------------------------------------------------------------------------
+		function actualESP(obj) 
+
+			for i=0,5 do
+				surface = Instance.new("SurfaceGui",obj) --//Creates the SurfaceGui
+				surface.Face = Enum.NormalId[faces[i+1]] --//Adjusts the Face and chooses from the face table
+				surface.AlwaysOnTop = true
+
+				frame = Instance.new("Frame",surface)	--//Creates the viewable Frame
+				frame.Size = UDim2.new(1,0,1,0)
+				frame.BorderSizePixel = 0												
+				frame.BackgroundTransparency = TRANSPARENCY
+				if currentPlayer.Team == players.LocalPlayer.Team then --//Checks the Players Team
+					frame.BackgroundColor3 = Color3.new(ALLYCOLOR[1],ALLYCOLOR[2],ALLYCOLOR[3])	--//If in same Team											
+				else
+					frame.BackgroundColor3 = Color3.new(ENEMYCOLOR[1],ENEMYCOLOR[2],ENEMYCOLOR[3])	--//If in another Team
+				end
+
+			end
+		end
+		-- -----------------------------------------------------------------------------------
+		function createHealthbar(hrp) 
+			board =Instance.new("BillboardGui",hrp) --//Creates the BillboardGui with HumanoidRootPart as the Parent
+			board.Name = "total"
+			board.Size = UDim2.new(1,0,1,0)
+			board.StudsOffset = Vector3.new(3,1,0)
+			board.AlwaysOnTop = true
+
+			bar = Instance.new("Frame",board) --//Creates the red background
+			bar.BackgroundColor3 = Color3.new(255,0,0)
+			bar.BorderSizePixel = 0
+			bar.Size = UDim2.new(0.2,0,4,0)
+			bar.Name = "total2"
+
+			health = Instance.new("Frame",bar) --//Creates the changing green Frame
+			health.BackgroundColor3 = Color3.new(0,255,0)
+			health.BorderSizePixel = 0
+			health.Size = UDim2.new(1,0,hrp.Parent.Humanoid.Health/100,0)
+			hrp.Parent.Humanoid.Changed:Connect(function(property) --//Triggers when any Property changed
+				hrp.total.total2.Frame.Size = UDim2.new(1,0,hrp.Parent.Humanoid.Health/100,0) --//Adjusts the size of the green Frame								
+			end)
+		end
+		-- -----------------------------------------------------------------------------------
+		function createESP(c) --//Checks and calls the proper function
+			bugfix = c:WaitForChild("Head") --// *Used so the children of the character arent nil.
+			for i,v in pairs(c:GetChildren()) do
+				if checkPart(v) then
+					actualESP(v)
+				end
+			end
+			if HEALTHBAR_ACTIVATED then --//If the user decided to
+				createHealthbar(c:WaitForChild("HumanoidRootPart")) --//Calls the function of the creation
+			end
+		end
+		-- -----------------------------------------------------------------------------------
+		for i,people in pairs(players:GetChildren())do
+			if people ~= players.LocalPlayer then
+				currentPlayer = people
+				--//Used for Players already in the Game
+				createESP(people.Character)
+				people.CharacterAdded:Connect(function(character)
+					createESP(character)			
+				end)
+			end
+		end
+		-- -----------------------------------------------------------------------------------
+	end --//End of the entire function
+
+	createFlex() --// Does exactly that :)
+end)
+
+UICorner_2.Parent = ESP
+
+VoidGui.Name = "VoidGui"
+VoidGui.Parent = Main
+VoidGui.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+VoidGui.BorderSizePixel = 0
+VoidGui.Size = UDim2.new(0, 208, 0, 50)
+VoidGui.Font = Enum.Font.SourceSans
+VoidGui.Text = "VoidGui"
+VoidGui.TextColor3 = Color3.fromRGB(0, 143, 0)
+VoidGui.TextScaled = true
+VoidGui.TextSize = 14.000
+VoidGui.TextWrapped = true
+
+UICorner_3.Parent = VoidGui
+
+Arsenal.Name = "Arsenal"
+Arsenal.Parent = Main
+Arsenal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Arsenal.BorderSizePixel = 0
+Arsenal.Position = UDim2.new(0.345132738, 0, 0, 0)
+Arsenal.Size = UDim2.new(0, 370, 0, 50)
+Arsenal.Font = Enum.Font.SourceSans
+Arsenal.Text = "Arsenal"
+Arsenal.TextColor3 = Color3.fromRGB(0, 0, 255)
+Arsenal.TextScaled = true
+Arsenal.TextSize = 14.000
+Arsenal.TextWrapped = true
+
+UICorner_4.Parent = Arsenal
+
+UICorner_5.Parent = Main
+
+Credits.Name = "Credits"
+Credits.Parent = Main
+Credits.BackgroundColor3 = Color3.fromRGB(49, 49, 49)
+Credits.BorderSizePixel = 0
+Credits.Position = UDim2.new(0.43008849, 0, 0.196078435, 0)
+Credits.Size = UDim2.new(0, 322, 0, 77)
+Credits.Font = Enum.Font.SourceSans
+Credits.Text = "This script is fully created by Atom#1422"
+Credits.TextColor3 = Color3.fromRGB(0, 0, 0)
+Credits.TextSize = 25.000
+Credits.TextWrapped = true
+
+DiscordServer.Name = "Discord Server"
+DiscordServer.Parent = Main
+DiscordServer.BackgroundColor3 = Color3.fromRGB(49, 49, 49)
+DiscordServer.BorderSizePixel = 0
+DiscordServer.Position = UDim2.new(0.43008849, 0, 0.498039216, 0)
+DiscordServer.Size = UDim2.new(0, 322, 0, 128)
+DiscordServer.Font = Enum.Font.SourceSans
+DiscordServer.Text = "Join the Void Discord Server: https://discord.gg/SAAYvn92UA"
+DiscordServer.TextColor3 = Color3.fromRGB(0, 0, 0)
+DiscordServer.TextSize = 25.000
+DiscordServer.TextWrapped = true
